@@ -9,7 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@imagekit/next": "^2.1.5",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
+    "imagekitio-react": "^4.3.0",
+    "lucide-react": "^1.17.0",
+    "mongoose": "^9.6.3",
     "next": "16.2.6",
+    "next-auth": "^4.24.14",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -23,5 +30,8 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.15"
   }
 }
