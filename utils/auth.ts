@@ -24,25 +24,25 @@ export const authOptions:NextAuthOptions = {
   CredentialsProvider({
     name: "Credentials",
     credentials:{
-      Email: {label:"email",type:"text"},
-      Password: {label:"Password",type:"password"}
+      email: { label: "Email", type: "text" },
+      password: { label: "Password", type: "password" }
     },
     async authorize(credentials){
-      if(!credentials?.Email || !credentials?.Password){
-        throw new Error("Email or Password missing");
+      if(!credentials?.email || !credentials?.password){
+        throw new Error("Email or password missing");
       }
       try {
         await connectToDB()
-        const user = await User.findOne({email:credentials.Email})
+        const user = await User.findOne({ email: credentials.email })
         if(!user){
-          throw new Error("User missing")
+          throw new Error("User not found")
         }
         const isValid = await bcrypt.compare(
-          credentials.Password, 
+          credentials.password,
           user.password
         )
         if(!isValid){
-          throw new Error("Password are not valid")
+          throw new Error("Password is not valid")
         }
         return {
           id: user._id.toString(),
@@ -57,22 +57,24 @@ export const authOptions:NextAuthOptions = {
   ],
   callbacks:{
     async jwt({ token, user }) {
-      
-      return token
+      if (user) {
+        token.id = user.id as string;
+      }
+      return token;
     },
-    async session({session, token}){
+    async session({ session, token }){
       if(session.user){
         session.user.id = token.id as string
       }
       return session
-  }
+    }
 },
 pages:{
   signIn:"/login",
   error:"/login",
 },
 session:{
-  strategy: "database",
+  strategy: "jwt",
   maxAge: 30 * 24 * 60 * 60,
 },
 secret: process.env.NEXTAUTH_SECRET,

@@ -22,59 +22,70 @@ const FileUpload = ({
     const [uploading, setUploading] = useState(false);
     const [error, setError] =useState<String | null>(null);
     
-    const validFile = (file:File) => {
-        if(fileType === "video"){
-            if(!file.type.startsWith("video/")){
-                setError("Please select a video file");
+    const validFile = (file: File) => {
+        let valid = true;
 
+        if (fileType === "video") {
+            if (!file.type.startsWith("video/")) {
+                setError("Please select a video file.");
+                valid = false;
             }
         }
-        if(fileType === "image"){
-            if(!file.type.startsWith("image/")){
-                setError("Please select a image file");
-                
+
+        if (fileType === "image") {
+            if (!file.type.startsWith("image/")) {
+                setError("Please select an image file.");
+                valid = false;
             }
         }
-        if(file.size > 100 * 1024 * 1024){
-            setError("File size should be less than 100MB");
+
+        if (file.size > 100 * 1024 * 1024) {
+            setError("File size should be less than 100MB.");
+            valid = false;
         }
-        return true;
-    }
+
+        return valid;
+    };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if(!file || !validFile(file))
-            return;
+        if (!file || !validFile(file)) return;
+
         setUploading(true);
         setError(null);
 
-        try{
-            const authres = await fetch("/api/auth/imagekit-auth")
-            const auth = await authres.json()
+        try {
+            const authres = await fetch("/api/auth/imagekit-auth");
+            if (!authres.ok) {
+                const text = await authres.text();
+                throw new Error(`Upload auth failed: ${text || authres.statusText}`);
+            }
+
+            const auth = await authres.json();
+            const uploadAuth = auth.AuthenticationParameters ?? auth;
             const res = await upload({
                 file,
-                fileName: file.name, 
+                fileName: file.name,
                 publicKey: process.env.NEXT_PUBLIC_PUBLIC_KEY!,
-                signature: auth.signature,
-                expire: auth.expire,
-                token: auth.token,
-                
-                
+                signature: uploadAuth.signature,
+                expire: uploadAuth.expire,
+                token: uploadAuth.token,
                 onProgress: (event) => {
-                    if(onProgress){
+                    if (onProgress) {
                         const progress = Math.round((event.loaded / event.total) * 100);
-                        onProgress(Math.round(progress));
+                        onProgress(progress);
                     }
                 },
-                
-            })
+            });
+
             onSuccess(res);
-        } catch (err) {
-            console.error("Upload failed:",err);
+        } catch (err: any) {
+            console.error("Upload failed:", err);
+            setError(err?.message || "Upload failed. Please try again.");
         } finally {
             setUploading(false);
         }
-    }
+    };
 
 
     return (

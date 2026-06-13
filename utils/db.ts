@@ -8,29 +8,34 @@ if(!MONGODB_URI) {
 
 }
 
-let cached = global.mongoose
+let cached: any = (global as any).mongoose;
 
-if(!cached){
-    cached = global.mongoose = {conn:null , promise:null} 
+if (!cached) {
+    (global as any).mongoose = cached = { conn: null, promise: null };
 }
 
 export async function connectToDB() {
-    if(cached.conn){
+    if (cached.conn) {
         return cached.conn;
     }
-    if(!cached.promise){
+
+    if (!cached.promise) {
         const ops = {
-            bufferCommands : true,
-            maxPoolSize : 10
-        }
-        mongoose
-        .connect(MONGODB_URI,ops)
-        .then(()=>{mongoose.connection})
+            bufferCommands: true,
+            maxPoolSize: 10,
+        };
+
+        cached.promise = mongoose.connect(MONGODB_URI, ops).then((m) => {
+            return m.connection;
+        });
     }
+
     try {
-        cached.conn  = await cached.promise;
+        cached.conn = await cached.promise;
     } catch (error) {
-        cached.promise =null;
+        cached.promise = null;
+        throw error;
     }
+
     return cached.conn;
 }
